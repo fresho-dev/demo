@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en">
+
+<head>
+  <!-- HTML metadata -->
+  <meta charset="UTF-8" />
+  <title>Fresho.dev Marketplace</title>
+  <meta name="description" content="E-Commerce platform powered by fresho.dev." />
+  <link rel="icon" type="image/png" href="./static/logo-72x72.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <!-- Social media preview images -->
+  <meta property="og:image" content="./static/logo-512x512.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+
+  <!-- Add to homescreen for Safari on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Fresho.dev Marketplace" />
+
+  <!-- Homescreen icons -->
+  <link rel="apple-touch-icon" href="./static/logo-72x72.png" />
+  <link rel="apple-touch-icon" sizes="72x72" href="./static/logo-72x72.png" />
+  <link rel="apple-touch-icon" sizes="128x128" href="./static/logo-128x128.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="./static/logo-512x512.png" />
+
+  <!-- Other PWA stuff -->
+  <meta name="theme-color" content="#000000">
+
+  <!-- Capabilities-related metadata -->
+  <meta name="viewport" content="width=device-width,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <!-- Third party imports -->
+  <script src="https://unpkg.com/petite-vue"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Service worker registration -->
+  <script>
+    navigator.serviceWorker.register('./js/sw.js').then(event => {
+      console.log('ServiceWorker registration successful:', event);
+    }, function (err) {
+      alert(`ServiceWorker registration failed: ${err}`);
+    });
+  </script>
+</head>
+
+<body v-scope @vue:mounted="mounted" class="text-white bg-gradient-to-b from-slate-700 to-slate-900 h-full">
+
+  <!-- Page title and logo -->
+  <div class="flex flex-col items-center justify-center h-[64px] pt-[16px]">
+    <h1 class="font-thin text-3xl">
+      <i v-show="pet" @click="back()" class="fa fa-arrow-left cursor-pointer"></i>
+      <span v-show="pet">&nbsp;</span>
+      Fresho.dev Marketplace
+    </h1>
+  </div>
+
+  <!-- Pet Type Selector -->
+  <div class="flex flex-col items-center justify-center h-[calc(100%-80px)]" v-show="!pet">
+    <div class="w-3/4">
+      <div>
+        <h1 class="mx-auto flex font-thin text-xl justify-center">Select Your Pet</h1>
+      </div>
+      <div class="my-4 cursor-pointer h-18" @click="selectPet(pet)" v-for="pet in petChoices">
+        <div class="p-2 max-w-md mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+          <div class="shrink-0">
+            <img class="h-12 w-12 rounded-lg object-cover" v-bind:src="pet.image">
+          </div>
+          <div>
+            <div class="text-xl font-medium text-black">{{pet.title}}</div>
+            <p class="text-slate-600">{{pet.desc}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pet Details -->
+  <div class="flex flex-col items-center justify-center h-[calc(100%-80px)]" v-show="pet && !toys">
+    <div class="w-3/4 max-w-md">
+      <div>
+        <h1 class="mx-auto flex font-thin text-xl justify-center">Tell Us About Your Pet</h1>
+      </div>
+      <form class="px-8 pt-6 pb-8 mb-4" onsubmit="event.preventDefault()">
+        <div class="mb-4">
+          <label class="block text-sm font-thin mb-2">
+            Pet's Name
+            <input
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              v-model:value="name" type="text" placeholder="Pet's Name" required />
+          </label>
+        </div>
+        <div class="mb-6">
+          <label class="block text-sm font-thin mb-2">
+            <div>
+              <span v-show="name">What's {{name}} like?</span>
+              <span v-show="!name">What's your pet like?</span>
+            </div>
+            <input
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="E.g. young and active, likes chewing on hard toys, etc." v-model:value="details" type="text"
+              required />
+          </label>
+        </div>
+        <div class="mb-0">
+          <input
+            class="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="submit" @click="checkDetails()" value="Next" />
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Pet Toys Selector -->
+  <div class="flex flex-col items-center justify-center h-[calc(100%-80px)]" v-show="pet && toys">
+    <div class="w-3/4 max-w-md">
+      <div>
+        <h1 class="mx-auto flex font-thin text-xl justify-center">Toys for {{name}}</h1>
+      </div>
+      <div class="grid grid-cols-3 gap-4 my-4">
+        <div class="p-2 flex items-center" v-for="toy in toys">
+          <div class="shrink-0 cursor-pointer" @click="selectToy(toy)">
+            <h2 class="mx-auto flex text-md justify-center">{{toy.title}}</h2>
+            <img class="h-24 w-24 rounded-lg object-cover" v-bind:src="toy.image" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toy Detail -->
+    <div class="fixed top-0 bottom-0 left-0 right-0" v-show="selectedToy">
+      <div class="flex flex-col items-center justify-center h-[calc(100%-80px)]">
+        <div class="max-w-sm rounded overflow-hidden shadow-lg bg-white">
+          <img class="w-full max-h-80 object-cover" v-bind:src="selectedToy?.image">
+          <div class="px-6 py-4">
+            <div class="font-bold text-xl mb-2 text-gray-900">{{selectedToy?.title}}</div>
+            <p class="text-gray-700 text-base">{{selectedToy?.desc ?? '...'}}</p>
+          </div>
+          <div class="px-6 pt-4 pb-2">
+            <button
+              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              Add to Cart
+            </button>
+            <button @click="clearToy()"
+              class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+</body>
+
+<script type="module">
+
+  window.app = PetiteVue.createApp({
+    pet: null,
+    name: null,
+    details: null,
+    toys: null,
+    selectedToy: null,
+    toyChoices: null,
+    petChoices: [
+      { title: '🐕 Dog', name: 'dog', desc: 'Human\'s best friend', image: './static/dog.jpeg' },
+      { title: '🐈 Cat', name: 'cat', desc: 'Here kitty kitty kitty', image: './static/cat.jpeg' },
+      { title: '🦜 Bird', name: 'bird', desc: 'Chirpy lil motherf*ckers', image: './static/bird.jpeg' },
+    ],
+
+    async mounted() {
+      // Load the toy inventory.
+      this.toyChoices = await fetch('./static/toys.json').then(res => res.json());
+
+      // Manually handle navigation events.
+      window.onpopstate = event => this.back();
+
+      // TODO: Handle initial playlist request.
+      window.location.hash = '';
+    },
+
+    selectPet(pet) {
+      history.pushState({}, null, '#!' + pet.name);
+      this.pet = pet;
+    },
+
+    checkDetails() {
+      if (!this.name || !this.details) return;
+      this.toys = this.toyChoices.filter(x => x.pets.includes(this.pet.name))
+    },
+
+    async selectToy(toy) {
+      this.selectedToy = toy;
+      if (!toy.desc) {
+        const url = new URL('https://iguanagothere.azurewebsites.net');
+        url.pathname = '/api/openai_text_completion';
+        url.searchParams.set('prompt', `Create a brief product description trying to sell a ${toy.title} for a ${this.pet.name} named "${this.name}" that is known for: ${this.details}.`);
+        toy.desc = await fetch(url).then(res => res.json()).then(x => x.result);
+      }
+    },
+
+    clearToy() {
+      this.selectedToy = null;
+    },
+
+    back() {
+      if (this.toys) {
+        history.replaceState({}, null, '#!' + this.pet.name);
+        this.toys = null;
+        this.name = null;
+        this.details = null;
+      } else {
+        history.replaceState({}, null, '');
+        window.location.hash = '';
+        this.pet = null;
+      }
+    },
+
+  }).mount();
+
+</script>
+
+</html>
