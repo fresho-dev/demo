@@ -90,7 +90,7 @@
           <label class="block text-sm font-thin mb-2">
             Pet's Name
             <input
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
               v-model:value="name" type="text" placeholder="Pet's Name" required />
           </label>
         </div>
@@ -101,7 +101,7 @@
               <span v-show="!name">What's your pet like?</span>
             </div>
             <input
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
               placeholder="E.g. young and active, likes chewing on hard toys, etc." v-model:value="details" type="text"
               required />
           </label>
@@ -138,7 +138,7 @@
           <img class="w-full max-h-80 object-cover" v-bind:src="selectedToy?.image">
           <div class="px-6 py-4">
             <div class="font-bold text-xl mb-2 text-gray-900">{{selectedToy?.title}}</div>
-            <p class="text-gray-700 text-base">{{selectedToy?.desc ?? '...'}}</p>
+            <p class="text-gray-700 text-base max-h-60 overflow-auto">{{selectedToy?.desc ?? '...'}}</p>
           </div>
           <div class="px-6 pt-4 pb-2">
             <button
@@ -157,6 +157,11 @@
 </body>
 
 <script type="module">
+
+  const prompt = '' +
+    'You work for a company that produces pet supplies. Your task is to write a brief product description. ' +
+    'You will be given the type of pet, the pet\'s name, some details about it from a prospective customer. ' +
+    'Then, you will be given a single product name for which you must write a brief description.';
 
   window.app = PetiteVue.createApp({
     pet: null,
@@ -195,10 +200,14 @@
     async selectToy(toy) {
       this.selectedToy = toy;
       if (!toy.desc) {
+        // const url = new URL('http://localhost:7071');
         const url = new URL('https://iguanagothere.azurewebsites.net');
-        url.pathname = '/api/openai_text_completion';
-        url.searchParams.set('prompt', `Create a brief product description trying to sell a ${toy.title} for a ${this.pet.name} named "${this.name}" that is known for: ${this.details}.`);
-        toy.desc = await fetch(url).then(res => res.json()).then(x => x.result);
+        url.pathname = '/api/generate_text';
+        url.searchParams.set('maxtokens', `100`);
+        url.searchParams.set('backend', window.backend || `openai`);
+        url.searchParams.set('apikey', `0000000000000000000000000000`);
+        url.searchParams.set('prompt', `${prompt}\n\nPet type: ${this.pet.name}.\nPet name: ${this.name}.\nPet details: ${this.details}.\n\nProduct name: ${toy.title}.\nSales pitch: `);
+        toy.desc = await fetch(url).then(res => res.text()).then(text => text.trim());
       }
     },
 
